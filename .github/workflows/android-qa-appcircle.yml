@@ -47,10 +47,29 @@ jobs:
           MYAPP_UPLOAD_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
           MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
           EOF
+      - name: Generate Appcircle PAT
+        id: appcircle_pat
+        env:
+          APPCIRCLE_PERSONAL_ACCESS_KEY: ${{ secrets.APPCIRCLE_PERSONAL_ACCESS_KEY }}
+        run: |
+          # Appcircle docs: generate PAT from auth API using personal access key
+          # POST https://auth.appcircle.io/auth/v3/token -d "personalAccessKey=..."
+          PAT_JSON=$(curl -sS -X POST "https://auth.appcircle.io/auth/v3/token" \
+          -H "accept: application/json" \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          --data-urlencode "personalAccessKey=${APPCIRCLE_PERSONAL_ACCESS_KEY}")
+
+          echo "$PAT_JSON" | jq -e . >/dev/null 2>&1 || (echo "Auth API did not return JSON" && exit 1)
+
+          # El campo exacto puede variar; probamos los más comunes
+          PAT=$(echo "$PAT_JSON" | jq -r '.token // .access_token // .data.token // empty')
+
+          test -n "$PAT" || (echo "Could not extract PAT from: $PAT_JSON" && exit 1)
+
+          echo "AC_PERSONAL_API_TOKEN=$PAT" >> $GITHUB_ENV
 
       - name: Run fastlane
         env:
-          APPCIRCLE_PERSONAL_ACCESS_KEY: ${{ secrets.APPCIRCLE_PERSONAL_ACCESS_KEY }}
           APPCIRCLE_PROFILE_NAME: ${{ secrets.APPCIRCLE_PROFILE_NAME }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF: ${{ github.ref_name }}

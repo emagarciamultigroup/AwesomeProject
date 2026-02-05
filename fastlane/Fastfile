@@ -12,7 +12,7 @@ platform :android do
     apk_path = "./android/app/build/outputs/apk/release/app-release.apk"
 
     appcircle_testing_distribution(
-      personalAccessKey: ENV["APPCIRCLE_PERSONAL_ACCESS_KEY"],
+      personalAPIToken: ENV["AC_PERSONAL_API_TOKEN"],
       profileName: ENV["APPCIRCLE_PROFILE_NAME"],
       createProfileIfNotExists: true,
       appPath: apk_path,
