@@ -14,3 +14,6 @@ gem 'bigdecimal'
 gem 'logger'
 gem 'benchmark'
 gem 'mutex_m'
+
+gem "fastlane"
+gem "fastlane-plugin-appcircle_testing_distribution"
