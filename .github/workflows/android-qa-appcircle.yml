@@ -50,7 +50,7 @@ jobs:
 
       - name: Run fastlane
         env:
-          APPCIRCLE_API_TOKEN: ${{ secrets.APPCIRCLE_API_TOKEN }}
+          APPCIRCLE_PERSONAL_ACCESS_KEY: ${{ secrets.APPCIRCLE_PERSONAL_ACCESS_KEY }}
           APPCIRCLE_PROFILE_NAME: ${{ secrets.APPCIRCLE_PROFILE_NAME }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_REF: ${{ github.ref_name }}
