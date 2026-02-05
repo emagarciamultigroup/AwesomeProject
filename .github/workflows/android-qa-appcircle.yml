@@ -47,6 +47,7 @@ jobs:
           MYAPP_UPLOAD_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
           MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
           EOF
+
       - name: Generate Appcircle PAT
         id: appcircle_pat
         env:
@@ -67,6 +68,14 @@ jobs:
           test -n "$PAT" || (echo "Could not extract PAT from: $PAT_JSON" && exit 1)
 
           echo "AC_PERSONAL_API_TOKEN=$PAT" >> $GITHUB_ENV
+
+          echo "PAT length: ${#PAT}"
+          test ${#PAT} -gt 20 || (echo "PAT looks too short" && exit 1)
+
+      - name: Verify Appcircle env vars
+        run: |
+          test -n "${AC_PERSONAL_API_TOKEN}" && echo "AC_PERSONAL_API_TOKEN OK" || (echo "AC_PERSONAL_API_TOKEN MISSING" && exit 1)
+          test -n "${APPCIRCLE_PROFILE_NAME}" && echo "APPCIRCLE_PROFILE_NAME OK" || (echo "APPCIRCLE_PROFILE_NAME MISSING" && exit 1)
 
       - name: Run fastlane
         env:
