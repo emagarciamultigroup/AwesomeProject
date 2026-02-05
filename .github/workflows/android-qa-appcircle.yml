@@ -39,16 +39,7 @@ jobs:
       - name: Make gradle executable
         run: chmod +x android/gradlew
 
-      - name: Configure signing (gradle.properties)
-        run: |
-          cat >> android/gradle.properties <<EOF
-          MYAPP_UPLOAD_STORE_FILE=qa.keystore
-          MYAPP_UPLOAD_STORE_PASSWORD=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          MYAPP_UPLOAD_KEY_ALIAS=${{ secrets.ANDROID_KEY_ALIAS }}
-          MYAPP_UPLOAD_KEY_PASSWORD=${{ secrets.ANDROID_KEY_PASSWORD }}
-          EOF
-
-      - name: Build APK with fastlane
+      - name: Build APK with fastlane (CLI)
         run: bundle exec fastlane android qa
 
       - name: Generate Appcircle PAT
@@ -64,7 +55,7 @@ jobs:
           echo "AC_PERSONAL_API_TOKEN=$TOKEN" >> $GITHUB_ENV
 
       - name: Upload to Appcircle Testing Distribution
-        uses: appcircleio/appcircle-testing-distribution-githubaction@v1
+        uses: appcircleio/appcircle-testing-distribution-githubaction@v0.0.3
         with:
           personalAPIToken: ${{ env.AC_PERSONAL_API_TOKEN }}
           profileName: ${{ secrets.APPCIRCLE_PROFILE_NAME }}
