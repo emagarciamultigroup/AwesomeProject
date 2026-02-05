@@ -36,6 +36,9 @@ jobs:
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > android/app/qa.keystore
 
+      - name: Make gradle executable
+        run: chmod +x android/gradlew
+
       - name: Configure signing (gradle.properties)
         run: |
           cat >> android/gradle.properties <<EOF

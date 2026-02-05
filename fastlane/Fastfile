@@ -3,15 +3,14 @@ default_platform(:android)
 platform :android do
   desc "Build Android release APK and upload to Appcircle Testing Distribution"
   lane :qa do
-    # 1) Build (release)
     gradle(
+      gradle_path: "android/gradlew"  
       task: "assemble",
       build_type: "Release"
     )
 
     apk_path = "./android/app/build/outputs/apk/release/app-release.apk"
 
-    # 2) Upload to Appcircle Testing Distribution
     appcircle_testing_distribution(
       personal_api_token: ENV["APPCIRCLE_PERSONAL_API_TOKEN"],
       app_path: apk_path,
