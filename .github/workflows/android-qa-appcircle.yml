@@ -73,6 +73,9 @@ jobs:
           test ${#PAT} -gt 20 || (echo "PAT looks too short" && exit 1)
 
       - name: Verify Appcircle env vars
+        env:
+          AC_PERSONAL_API_TOKEN: ${{ env.AC_PERSONAL_API_TOKEN }}
+          APPCIRCLE_PROFILE_NAME: ${{ secrets.APPCIRCLE_PROFILE_NAME }}
         run: |
           test -n "${AC_PERSONAL_API_TOKEN}" && echo "AC_PERSONAL_API_TOKEN OK" || (echo "AC_PERSONAL_API_TOKEN MISSING" && exit 1)
           test -n "${APPCIRCLE_PROFILE_NAME}" && echo "APPCIRCLE_PROFILE_NAME OK" || (echo "APPCIRCLE_PROFILE_NAME MISSING" && exit 1)
