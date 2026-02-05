@@ -4,7 +4,7 @@ platform :android do
   desc "Build Android release APK and upload to Appcircle Testing Distribution"
   lane :qa do
     gradle(
-      gradle_path: "android/gradlew",
+      project_dir: "android",
       task: "assemble",
       build_type: "Release"
     )
