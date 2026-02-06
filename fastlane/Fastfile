@@ -3,10 +3,95 @@ default_platform(:android)
 platform :android do
   desc "Build Android release APK"
   lane :qa do
+
+     env_value = "QA"
+
+    file = File.expand_path("../environments/environments.ts", __dir__)
+    content = File.read(file)
+
+    replaced = content.gsub(/=\s*'(DEV|QA|PROD)'/, "= '#{env_value}'")
+
+    UI.user_error!("No se encontró la constante environment para reemplazar") if replaced == content
+
+    File.write(file, replaced)
+    UI.success("Ambiente configurado a #{env_value} en #{file}")
+
+    UI.success("Ambiente configurado a QA")
+
     gradle(
       project_dir: "android",
       task: "assemble",
       build_type: "Release"
+    )
+
+    apk_path = File.expand_path("../android/app/build/outputs/apk/release/app-release.apk", __dir__)
+    parent_folder_id = ENV['GDRIVE_PARENT_FOLDER_ID']
+    drive_key_json = ENV['GDRIVE_KEY_JSON']
+    now = Time.now.getlocal("-06:00")
+    branch = `git rev-parse --abbrev-ref HEAD`.strip
+    branch_safe = branch.gsub(/[^0-9A-Za-z.\-]/, "-")
+    folder_title = "multiapp-qa-#{branch_safe}-#{now.strftime("%Y%m%d-%H%M%S")}"
+    new_apk_name = "multiapp-qa-#{branch_safe}-#{now.strftime("%Y%m%d-%H%M%S")}.apk"
+    new_apk_path = File.join(File.dirname(apk_path), new_apk_name)
+
+    UI.message("APK built at: #{apk_path}")
+    UI.user_error!("APK not found at #{apk_path}") unless File.exist?(apk_path)
+
+    UI.user_error!("GDRIVE_KEY_JSON environment variable is not set") if drive_key_json.to_s.empty?
+
+
+    UI.user_error!("Missing GDRIVE_PARENT_FOLDER_ID") if parent_folder_id.to_s.strip.empty?
+
+    File.rename(apk_path, new_apk_path)
+
+    created = create_google_drive_folder(
+        drive_key_json: drive_key_json,
+        service_account: true,
+        folder_id: parent_folder_id,
+        folder_title: folder_title
+    )
+
+    UI.message("Created Google Drive folder: #{created}")
+
+    folder_id =
+    if created.respond_to?(:id)
+        created.id
+    elsif created.respond_to?(:resource_id)
+        created.resource_id
+    end
+
+    UI.user_error!("Could not read folder id from created folder") if folder_id.to_s.strip.empty?
+
+    folder_url = "https://drive.google.com/drive/folders/#{folder_id}"
+
+
+    UI.success("Folder URL: #{folder_url}")
+
+    uploaded = upload_to_google_drive(
+        drive_key_json: drive_key_json,
+        service_account: true,
+        folder_id: folder_id,
+        upload_files: [new_apk_path],
+    )
+
+    view_url = uploaded.first
+
+    file_id = view_url[%r{/d/([^/]+)}, 1]
+
+    download_url = "https://drive.google.com/uc?export=download&id=#{file_id}"
+
+    UI.success("Direct download: #{download_url}")
+
+
+    google_chat(
+      imageUrl: 'https://lh3.googleusercontent.com/a-/ALV-UjW8XNen1msrsDuw0RcQDlRB5BQPIClr1Ld8XofWaAq1Iv2Sw65IMVYFE-Vc2ck-MSMFF6taD_FcN40Xcfvk7bWo6ETBR3f2z_iQ-Tn7Y1ve1LrwxG4qhDushijSGQ2MPap5mbX_DfOMNwJ9WZ04QPrmRR9pBfsZTUDETaqqh4kQhIHK8Gfe-mY0YVBJF_n-YHF6JS7v5d-vBT4BECb-Tn21bzPque5cgoq2lC-vRyfJ8K8xj0gbjUj2FqNGeh9X8J5hqBOzzOU-1mPpd4dmVGW4Vv_fYf-NXVIl8-2P31Mr7Vg1KqgiOVR1f-NpRsD1OGydecGrYKn-cWNqiHW2oMS870xTXzVhK89NCueaNz-b_V4e9uTvI6rXWxmXD2d25ydG_5KSDbF1xqTgvWSDy-Rt9rqpcy6EDqt8JtMqXTKumhicmLS23YYW5fHoAj3eS4Q1NAAlOYesWGg9NGPvCPaz5a5O-IX3b-hnl2RtyyRF0l9IkoTVWMtm-eaVgMVoXakuYefMfpJVW6dSQqWYw2LdbQXHs8cCbPVXFAJYLO4LH5o1XcDueLP6-Jwx34Yk2hXUNku0YwoQB9rqCQb_-4wjGJYwE_s6B8skRqLfqm2YqnhwIqhopMQe5Wlz3R71_Gyjr2u-F9nCxVsTS-LKxMCBR-5jA4myg5i-36-G4S9ACFJtcx9SxkQVcuXgmV4obgGHhnkfFLN8RJLvaqIKTm7RDxnsLGI89pAdnxJ2SBJlFR5_zYYEKxSFHY7ll449SsVkGQeuHpseS8OHUee5_ICG_GOpMaXdi-jqSWNuQPMcRaobjsx2oMU8l7OqGnrzusX-0xi0nu7vk_fgisTsv3EICf83KQgs2Lo0dUhiZrXGB--NJctJ8u2VkaV70bXfPkGElAGtmi_Hs7D_B58eTGf8vTVztrgQmpX3sPMEBzbEhJURcc_x-gTWHUTDQYY9pEWG9EH6No8R9pS81fLCp_Dc6qDCBebp8GDjm9DaxCXVgEowkENpqqhIaM9MbA2J7MeFf5ce5ouBg0RI4xX33La_xNhSQWdWEAn9AMoBU8MnjIHRjUdK7Hs=s288-c-no',
+      webhook: 'https://chat.googleapis.com/v1/spaces/AAQAohFksuA/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=Eqk-Od-GedOwrvpX_cxMmdfPTIwoI3MS_-wNKpvDOcw',
+      title: 'Nueva APK QA disponible',
+      description: "La nueva APK para el entorno QA está disponible. \n Google Drive: #{download_url} \n Rama: #{branch} \n Carpeta: #{folder_url}. Haz clic en el botón de abajo para descargarla.",
+      section1Title: 'Enlace de descarga',
+      section1Description: 'Haz clic en el botón para descargar la APK',
+      buttonTitle: "Descargar APK",
+      buttonUrl: download_url
     )
   end
 end

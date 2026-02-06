@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { environment } from './environments/environments';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -29,7 +30,10 @@ function AppContent() {
   return (
     <View style={styles.container}>
       <SafeAreaView>
-        <Text>Hola MultiGroup</Text>
+        <Text style={styles.title}>Hola MultiGroup</Text>
+        <Text style={styles.environmentText}>
+          El ambiente es: {environment}
+        </Text>
       </SafeAreaView>
     </View>
   );
@@ -38,6 +42,15 @@ function AppContent() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '600',
+    marginBottom: 16,
+  },
+  environmentText: {
+    fontSize: 18,
   },
 });
 

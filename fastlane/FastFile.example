@@ -1,0 +1,111 @@
+default_platform(:ios)
+
+# Helpers demo (reusables)
+def set_app_env(env)
+  file = File.expand_path("../src/config/environment.ts", __dir__)
+  content = File.read(file)
+
+  replaced = content.gsub(/=\s*'(DEV|QA|PROD)'/, "= '#{env}'")
+  File.write(file, replaced)
+
+  UI.message("✅ Environment set to #{env}")
+end
+
+def safe_branch
+  `git rev-parse --abbrev-ref HEAD`.strip.gsub(/[^0-9A-Za-z.\-]/, "-")
+end
+
+def timestamp_gt
+  Time.now.getlocal("-06:00").strftime("%Y%m%d-%H%M%S")
+end
+
+# -------------------
+# ANDROID
+# -------------------
+platform :android do
+  desc "🚀 PROD Android: build + Play Store (demo)"
+  lane :prod do
+    set_app_env("PROD")
+
+    branch = safe_branch
+    stamp  = timestamp_gt
+
+    UI.message("📌 Android PROD deploy started")
+    UI.message("Branch: #{branch} | Build: #{stamp}")
+
+    # Build AAB (recomendado para Play Store)
+    gradle(
+      project_dir: "android",
+      task: "bundle",
+      build_type: "Release"
+    )
+
+    aab_path = File.expand_path("../android/app/build/outputs/bundle/release/app-release.aab", __dir__)
+
+    UI.message("✅ AAB generated at: #{aab_path}")
+
+    # Subir a Play Store (demo)
+    upload_to_play_store(
+      aab: aab_path,
+      track: "production",
+      release_status: "completed",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+
+    UI.success("🎉 Android PROD published (demo)")
+
+    # Notificación (demo)
+    google_chat(
+      title: "✅ Android PROD publicado",
+      description: "Track: production\nBranch: #{branch}\nBuild: #{stamp}"
+    )
+  end
+end
+
+# -------------------
+# iOS
+# -------------------
+platform :ios do
+  desc "🚀 PROD iOS: build + App Store (demo)"
+  lane :prod do
+    set_app_env("PROD")
+
+    branch = safe_branch
+    stamp  = timestamp_gt
+
+    UI.message("📌 iOS PROD deploy started")
+    UI.message("Branch: #{branch} | Build: #{stamp}")
+
+    # Certificados (demo)
+    match(
+      type: "appstore",
+      readonly: true
+    )
+
+    # Build IPA (demo)
+    gym(
+      scheme: "AwesomeProject",
+      export_method: "app-store",
+      output_name: "AwesomeProject-PROD-#{branch}-#{stamp}.ipa"
+    )
+
+    ipa_path = File.expand_path("./AwesomeProject-PROD-#{branch}-#{stamp}.ipa", Dir.pwd)
+    UI.message("✅ IPA generated at: #{ipa_path}")
+
+    # Subir a App Store Connect (demo)
+    upload_to_app_store(
+      ipa: ipa_path,
+      submit_for_review: false
+    )
+
+    UI.success("🎉 iOS PROD uploaded to App Store Connect (demo)")
+
+    # Notificación (demo)
+    google_chat(
+      title: "✅ iOS PROD subido",
+      description: "App Store Connect upload OK\nBranch: #{branch}\nBuild: #{stamp}"
+    )
+  end
+end
